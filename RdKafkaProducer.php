@@ -43,6 +43,15 @@ class RdKafkaProducer implements Producer
 
         $topic = $this->producer->newTopic($destination->getTopicName(), $destination->getConf());
         $topic->produce($partition, 0 /* must be 0 */, $payload, $key);
+
+        $start = microtime(true);
+        while ($this->producer->getOutQLen() > 0) {
+            $this->producer->poll(1);
+
+            if (microtime(true) - $start > 10) {
+                throw new \RuntimeException("Message sending failed");
+            }
+        }
     }
 
     /**
